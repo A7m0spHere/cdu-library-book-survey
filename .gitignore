@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+
+cache/*
+!cache/.gitkeep
+
+*.tmp
+*.log
+survey.json
+survey.csv
+survey.md
+request.json
