@@ -171,14 +171,9 @@ Agent 应先读：
     "output_depth": "normal"
   },
   "keywords": [
-    "药物化学",
-    "药理学",
-    "药物设计学",
-    "计算机辅助药物设计",
-    "化学信息学",
-    "生物信息学",
-    "QSAR",
-    "人工智能药物研发"
+    "关键词1",
+    "关键词2",
+    "关键词3"
   ],
   "max_results_per_keyword": 50,
   "include_shelf_locations": true,
