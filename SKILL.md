@@ -3,9 +3,9 @@ name: cdu-library-book-survey
 description: Agent-neutral Chengdu University library survey workflow. Use when a user wants to research CDU OPAC holdings, recommend books by major/course/exam/research/career goal, compare library holdings with better external books, get call numbers, holding locations, borrow status, barcodes, shelf navigation, produce actionable borrowing lists, or map books to courses, abilities, and career directions.
 ---
 
-# CDU Library Book Survey
+# CDU Library Book Survey Skill
 
-Use this skill as a learning-planning and library-holdings research workflow for Chengdu University students. It must help the user decide which books are worth borrowing, whether they are currently borrowable, where to find them, what collection gaps remain, and whether external books should supplement the library.
+Use this reusable skill as a learning-planning and library-holdings research workflow for Chengdu University students. It must help the user decide which books are worth borrowing, whether they are currently borrowable, where to find them, what collection gaps remain, and whether external books should supplement the library.
 
 ## First Steps
 

@@ -1,6 +1,8 @@
-# 成都大学图书馆荐书工作流
+# 成都大学图书馆荐书 Skill
 
-`cdu-library-book-survey` 是一个 **Agent-neutral** 的学习规划与馆藏调研工作包，面向成都大学学生。它不是某个平台专用 Prompt，而是一套可被 Codex、Claude Code、Cursor、Gemini CLI、ChatGPT Skill 或其他 Agent 共同使用的规则、脚本和报告模板。
+> 一个可复用的 **AI Agent Skill / Skills 工作包**，用于成都大学图书馆馆藏调研、学习路线规划和书籍推荐。
+
+`cdu-library-book-survey` 是一个 **Agent-neutral Skill**，面向成都大学学生的学习规划与馆藏调研。它不是一次性 Prompt，也不是单纯脚本，而是一套可被 Codex、Claude Code、Cursor、Gemini CLI、ChatGPT Skill 或其他 Agent 共同使用的 **Skill 规则、执行流程、脚本和报告模板**。
 
 它的目标不是简单回答“图书馆有哪些书”，而是帮助学生判断：
 
@@ -10,6 +12,36 @@
 - 某个学习方向的馆藏是否足够；
 - 是否需要校外购书、电子阅读或向图书馆荐购；
 - 每本书对应哪些课程、能力和未来方向。
+
+## 这是什么类型的 Skill
+
+这是一个 **图书馆荐书与学习规划 Skill**。
+
+它让 AI Agent 具备一套稳定的执行能力：
+
+```text
+学生需求
+↓
+学习路线判断
+↓
+关键词扩展
+↓
+成都大学 OPAC 馆藏调研
+↓
+详情页与馆藏位置核验
+↓
+馆藏书和校外书分离推荐
+↓
+行动清单
+```
+
+它可以作为：
+
+- ChatGPT Skills 风格的 `SKILL.md`；
+- Codex / Cursor / Gemini CLI 可读的 `AGENTS.md` 工作规范；
+- Claude Code 可读的 `CLAUDE.md`；
+- 任意 AI 可复制使用的 `prompt.md`；
+- 可独立运行的 OPAC 采集脚本包。
 
 ## 适用场景
 
@@ -350,4 +382,3 @@ Add agent-neutral CDU library book survey workflow
 ```text
 Agent-neutral workflow for Chengdu University OPAC book recommendations, learning routes, holdings locations, and collection gap analysis.
 ```
-
