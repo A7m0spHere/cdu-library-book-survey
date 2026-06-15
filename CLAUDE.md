@@ -1,6 +1,6 @@
 # Claude Code Entry
 
-Use this repository as a neutral Skill package, not as a one-off prompt.
+Use this repository as a neutral Skills repository, not as a one-off prompt.
 
 1. Read `README.md` and `references/workflow.md`.
 2. Use `scripts/opac_survey.py` if the OPAC is reachable.

@@ -1,6 +1,6 @@
 # Agent Execution Guide
 
-This repository is an agent-neutral Skill package. Follow these rules in Codex, Cursor, Gemini CLI, or any coding agent.
+This repository is an agent-neutral Skills repository. Follow these rules in Codex, Cursor, Gemini CLI, or any coding agent.
 
 Treat it as a reusable skill, not as a one-off prompt or a standalone scraper. The script collects OPAC data; the references define the recommendation workflow, ranking rules, evidence rules, and report shape.
 

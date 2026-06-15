@@ -1,11 +1,11 @@
 ---
 name: cdu-library-book-survey
-description: Agent-neutral Chengdu University library survey workflow. Use when a user wants to research CDU OPAC holdings, recommend books by major/course/exam/research/career goal, compare library holdings with better external books, get call numbers, holding locations, borrow status, barcodes, shelf navigation, produce actionable borrowing lists, or map books to courses, abilities, and career directions.
+description: Agent-neutral Chengdu University library recommendation skill. Use when a user wants to research CDU OPAC holdings, recommend books by major/course/exam/research/career goal, compare library holdings with better external books, get call numbers, holding locations, borrow status, barcodes, shelf navigation, produce actionable borrowing lists, or map books to courses, abilities, and career directions.
 ---
 
-# CDU Library Book Survey Skill
+# CDU Library Book Survey Skills
 
-Use this reusable skill as a learning-planning and library-holdings research workflow for Chengdu University students. It must help the user decide which books are worth borrowing, whether they are currently borrowable, where to find them, what collection gaps remain, and whether external books should supplement the library.
+Use this reusable skills repository as a learning-planning and library-holdings research skill for Chengdu University students. It must help the user decide which books are worth borrowing, whether they are currently borrowable, where to find them, what collection gaps remain, and whether external books should supplement the library.
 
 ## First Steps
 
@@ -57,11 +57,11 @@ Create an input JSON:
 {
   "profile": {
     "school": "成都大学",
-    "major": "药学",
-    "stage": "大二",
-    "goal": "AI制药",
-    "purpose": "课程学习+科研入门",
-    "network": "校园网或VPN",
+    "major": "专业名称",
+    "stage": "年级或学习阶段",
+    "goal": "学习或研究目标",
+    "purpose": "课程学习 / 考研 / 科研入门 / 兴趣拓展 / 职业技能",
+    "network": "校园网 / 学校 VPN / 校外未连接 VPN / 未知",
     "output_depth": "normal"
   },
   "keywords": ["药物化学", "药理学", "药物设计学", "计算机辅助药物设计", "化学信息学"],

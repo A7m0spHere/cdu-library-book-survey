@@ -13,7 +13,7 @@ Template:
 帮助理解 SAR 与药物结构优化。
 
 [适合阶段]
-药学大二至大三。
+相关课程学习中期或专业入门阶段。
 
 [推荐原因]
 与药物化学课程高度匹配，且为后续 CADD 学习打基础。
@@ -28,4 +28,3 @@ Avoid empty praise:
 - 很有帮助
 
 These phrases are allowed only when followed by specific evidence, use case, or OPAC/external source context.
-

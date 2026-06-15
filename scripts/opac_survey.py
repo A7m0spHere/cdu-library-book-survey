@@ -6,8 +6,8 @@ library modules.
 
 Input JSON:
 {
-  "profile": {"major": "药学", "stage": "大二", "goal": "AI制药"},
-  "keywords": ["药物化学", "药物设计学"],
+  "profile": {"major": "专业名称", "stage": "年级或阶段", "goal": "学习或研究目标"},
+  "keywords": ["关键词1", "关键词2"],
   "max_results_per_keyword": 50,
   "use_cache": true,
   "refresh": false
