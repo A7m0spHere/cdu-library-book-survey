@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1200" height="500" viewBox="0 0 1200 500"
+     role="img" aria-labelledby="title desc">
+  <title id="title">成都大学图书馆荐书 Skill 的执行工作流</title>
+  <desc id="desc">从学生学习目标开始，经过关键词扩展、OPAC 详情与馆藏核验、双轨排序，最终形成带索书号和馆藏位置的借阅行动。</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0L10 5L0 10Z" fill="#55C2A4"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="500" rx="28" fill="#F5F0E6"/>
+  <rect x="34" y="30" width="8" height="76" rx="4" fill="#F2A65A"/>
+
+  <text x="66" y="66"
+        fill="#14242C" font-size="18" font-weight="800" letter-spacing="2"
+        font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    VERIFIED LIBRARY ROUTE
+  </text>
+  <text x="66" y="108"
+        fill="#14242C" font-size="42" font-weight="780"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+    一次调研，如何落到书架
+  </text>
+
+  <g id="pipeline"
+     font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+    <path d="M238 232H274" stroke="#55C2A4" stroke-width="4" marker-end="url(#arrow)"/>
+    <path d="M470 232H506" stroke="#55C2A4" stroke-width="4" marker-end="url(#arrow)"/>
+    <path d="M702 232H738" stroke="#55C2A4" stroke-width="4" marker-end="url(#arrow)"/>
+    <path d="M934 232H970" stroke="#55C2A4" stroke-width="4" marker-end="url(#arrow)"/>
+
+    <g transform="translate(48 158)">
+      <rect width="190" height="176" rx="18" fill="#0B1720"/>
+      <text x="20" y="34" fill="#F2A65A" font-size="18" font-weight="800">01 / PROFILE</text>
+      <text x="20" y="78" fill="#F5F0E6" font-size="28" font-weight="750">学习目标</text>
+      <text x="20" y="116" fill="#B9C6CC" font-size="20">专业 · 阶段</text>
+      <text x="20" y="146" fill="#B9C6CC" font-size="20">课程 · 方向</text>
+    </g>
+
+    <g transform="translate(280 158)">
+      <rect width="190" height="176" rx="18" fill="#132C35"/>
+      <text x="20" y="34" fill="#55C2A4" font-size="18" font-weight="800">02 / EXPAND</text>
+      <text x="20" y="78" fill="#F5F0E6" font-size="28" font-weight="750">关键词扩展</text>
+      <text x="20" y="116" fill="#B9C6CC" font-size="20">中英术语</text>
+      <text x="20" y="146" fill="#B9C6CC" font-size="20">课程名 · 技术名</text>
+    </g>
+
+    <g transform="translate(512 158)">
+      <rect width="190" height="176" rx="18" fill="#132C35"/>
+      <text x="20" y="34" fill="#55C2A4" font-size="18" font-weight="800">03 / VERIFY</text>
+      <text x="20" y="78" fill="#F5F0E6" font-size="28" font-weight="750">OPAC 核验</text>
+      <text x="20" y="116" fill="#B9C6CC" font-size="20">详情 · 馆藏</text>
+      <text x="20" y="146" fill="#B9C6CC" font-size="20">条码 · 架位</text>
+    </g>
+
+    <g transform="translate(744 158)">
+      <rect width="190" height="176" rx="18" fill="#132C35"/>
+      <text x="20" y="34" fill="#55C2A4" font-size="18" font-weight="800">04 / RANK</text>
+      <text x="20" y="78" fill="#F5F0E6" font-size="28" font-weight="750">双轨排序</text>
+      <text x="20" y="116" fill="#B9C6CC" font-size="20">馆藏 Top10</text>
+      <text x="20" y="146" fill="#B9C6CC" font-size="20">学习 Top10</text>
+    </g>
+
+    <g transform="translate(976 158)">
+      <rect width="190" height="176" rx="18" fill="#0B1720"/>
+      <text x="20" y="34" fill="#F2A65A" font-size="18" font-weight="800">05 / ACT</text>
+      <text x="20" y="78" fill="#F5F0E6" font-size="28" font-weight="750">借阅行动</text>
+      <text x="20" y="116" fill="#B9C6CC" font-size="20">索书号 · 馆藏地</text>
+      <text x="20" y="146" fill="#B9C6CC" font-size="20">替代书 · 荐购</text>
+    </g>
+  </g>
+
+  <g id="evidence-rule" transform="translate(48 382)">
+    <rect width="1118" height="72" rx="18" fill="#E8E1D3"/>
+    <circle cx="34" cy="36" r="10" fill="#F2A65A"/>
+    <text x="62" y="44"
+          fill="#14242C" font-size="24" font-weight="760"
+          font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+      馆藏事实
+    </text>
+    <text x="190" y="44" fill="#8A7B68" font-size="25" font-weight="800">≠</text>
+    <text x="226" y="44"
+          fill="#14242C" font-size="24" font-weight="760"
+          font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+      外部资料
+    </text>
+    <text x="354" y="44" fill="#8A7B68" font-size="25" font-weight="800">≠</text>
+    <text x="390" y="44"
+          fill="#14242C" font-size="24" font-weight="760"
+          font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+      人工判断
+    </text>
+    <text x="548" y="44"
+          fill="#61757E" font-size="18"
+          font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+      search_keyword → detail_record → shelf_location
+    </text>
+  </g>
+</svg>
