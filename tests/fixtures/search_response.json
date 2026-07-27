@@ -1,0 +1,21 @@
+{
+  "total": 2,
+  "content": [
+    {
+      "marcRecNo": "MARC001",
+      "title": "数据结构基础",
+      "author": "测试作者",
+      "publisher": "示例出版社",
+      "pubYear": "2024",
+      "callNo": "TP311.12/1"
+    },
+    {
+      "marcRecNo": "MARC002",
+      "title": "算法导论示例",
+      "author": "另一作者",
+      "publisher": "示例出版社",
+      "pubYear": "2023",
+      "callNo": "TP301.6/2"
+    }
+  ]
+}
