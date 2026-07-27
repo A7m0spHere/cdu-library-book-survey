@@ -14,13 +14,18 @@ Treat it as a reusable skill, not as a one-off prompt or a standalone scraper. T
 ## Tool Use
 
 - Prefer `scripts/opac_survey.py` for OPAC collection when network access works.
+- Keep the default 0.8-second request interval, bounded temporary-failure retries, and per-run record/location limits unless a more conservative setting is appropriate.
 - Use browser/computer automation only to verify UI behavior, inspect pages, or handle script failures.
 - Use manual-assisted mode when the OPAC is inaccessible from the agent environment.
 - Do not log into user accounts or perform account actions.
+- Do not bypass login, CAPTCHA, VPN, or access restrictions.
 
 ## Outputs
 
 - Keep final reports aligned with `references/report-template.md`.
 - Keep library holdings and external recommendations separate.
-- Mark unverified, cached, external, and judgment-based claims explicitly.
+- Preserve per-source provenance and verification timestamps from the collector.
+- Mark search, bibliographic, holdings-status, and shelf caches separately.
+- Treat holdings as live only when parsed from the OPAC detail response in the current run; cached status is always `[馆藏状态未实时核验]`.
+- Mark incomplete collection as `[部分结果不完整]` and retain `source_log`.
 - Include a "明天去图书馆该怎么借" action list.

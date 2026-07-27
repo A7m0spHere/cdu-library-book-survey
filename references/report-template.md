@@ -17,8 +17,8 @@ Use this template unless the user requests a shorter format.
 |---|---|---|---|
 
 ## 馆藏推荐 Top10
-| 排名 | 书名 | 对应能力 | 推荐理由 | 阅读成本 | 置信度 | 索书号 | 馆藏地 | 具体位置 | 状态 | 证据来源 |
-|---|---|---|---|---|---|---|---|---|---|---|
+| 排名 | 书名 | 对应能力 | 推荐理由 | 阅读成本 | 置信度 | 索书号 | 馆藏地 | 具体位置 | 状态 | 状态来源 | 状态核验时间 | 证据来源 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
 
 ## 学习价值 Top10
 | 排名 | 书名 | 馆藏关系 | 对应能力 | 推荐理由 | 阅读成本 | 建议阶段 |
@@ -55,9 +55,21 @@ Use this template unless the user requests a shorter format.
 |---|---|
 | OPAC检索关键词 | ... |
 | OPAC详情页 | ... |
+| 馆藏状态来源与核验时间 | live/cache/unverified；... |
 | 图书定位页 | ... |
 | 外部核验来源 | ... |
-| 缓存使用情况 | ... |
+| 搜索缓存 | 命中数、原核验时间、`[检索结果来自缓存]` |
+| 书目缓存 | 命中数、原核验时间、`[书目来自缓存]` |
+| 馆藏状态缓存 | 命中数、原核验时间、`[馆藏状态来自缓存] [馆藏状态未实时核验]` |
+| 架位缓存 | 命中数、原核验时间、`[架位信息来自缓存]` |
+| 缓存写入错误 | namespace、脱敏 key、错误；无错误则为空 |
+| 请求策略 | 请求间隔、重试次数、记录与架位请求上限 |
+| 请求失败与降级 | 失败步骤、重试、截断、`[部分结果不完整]` |
 | 检索时间 | ... |
 ```
 
+Only status parsed from an OPAC detail response during the current collection
+run may be labeled `[馆藏状态已实时核验]`. Cached status must show its original
+verification time and both `[馆藏状态来自缓存]` and
+`[馆藏状态未实时核验]`. Do not promote collector output into recommendation
+scores without applying the Agent rules.

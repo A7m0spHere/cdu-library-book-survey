@@ -40,38 +40,80 @@ If the user only says "帮我找书" or provides neither major nor goal, ask at 
 
 ## Cache Strategy
 
-Use cache to reduce repeated OPAC access.
+Use separate cache namespaces to reduce repeated OPAC access without letting
+slow-changing metadata extend the lifetime of volatile borrow status.
 
 | Data | TTL |
 |---|---:|
-| Bibliographic metadata | 30 days |
-| Shelf navigation/location | 30 days |
 | Keyword search results | 30 days |
+| Bibliographic metadata | 30 days |
 | Borrow/holding status | 3 days |
+| Shelf navigation/location | 30 days |
 
 Flow:
 
 ```text
 cache
 ↓
-TTL and required-field check
+per-namespace TTL and JSON integrity check
 ↓
 incremental live verification
 ↓
-update result
+atomic cache update + provenance timestamp
 ```
 
-If live access fails and cache is used, mark affected data with `[缓存数据]` and `[未实时核验]`.
+Legacy metadata caches may contain embedded holdings. Migrate them only when the
+original cache timestamp is no more than 3 days old, and preserve that timestamp.
+Write and read-verify the independent holdings cache before clearing embedded
+holdings from metadata. If that write fails, preserve the old file but do not
+expose its status as current. Ignore older embedded status. Corrupt or
+incompatible cache files are safe misses.
+
+Use these exact labels:
+
+| Evidence | Label |
+|---|---|
+| Cached search | `[检索结果来自缓存]` |
+| Cached bibliographic metadata | `[书目来自缓存]` |
+| Cached holdings/status | `[馆藏状态来自缓存]` and `[馆藏状态未实时核验]` |
+| Cached shelf navigation | `[架位信息来自缓存]` |
+| Holdings parsed from a detail response in this run | `[馆藏状态已实时核验]` |
+| Missing or non-live holdings verification | `[馆藏状态未实时核验]` |
+| Any failed collection step or record-limit truncation | `[部分结果不完整]` |
+
+Every holdings row must include its status source and `status_verified_at`.
+“Realtime” means the current collection run successfully requested and parsed
+the OPAC detail page. A cache hit is never realtime, even if within 3 days and
+even when no request failed.
+
+## Polite Request Policy
+
+- Wait at least 0.8 seconds between OPAC requests by default.
+- Retry only HTTP 429/502/503/504 and temporary network failures.
+- Make at most 2 retries by default, with 1-second then 2-second exponential
+  backoff; respect a longer `Retry-After`.
+- Process at most 50 detail records and issue at most 30 live shelf-navigation
+  requests per run by default. Limit each keyword search to at most 100 records.
+- Allow conservative overrides through request JSON or `--delay`,
+  `--max-retries`, `--max-records`, and `--max-location-requests`.
+- Never bypass authentication, CAPTCHA, VPN, or access controls.
+
+Write retries, final request failures, truncation, limits, cache write errors,
+and per-source counts to `source_log`. A cache write failure must not discard
+live evidence or erase the old cache. Tests must use fixtures or mocks rather
+than real OPAC traffic.
 
 ## Failure Handling
 
 If automation fails:
 
 1. State the failed step: page unreachable, empty search, detail-page failure, holding-status failure, campus/VPN restriction, login restriction, or anti-automation.
-2. Record visible page state or screenshot when available.
-3. Provide manual keywords and filters.
-4. Ask for search result screenshots, detail page screenshots, or copied OPAC text.
-5. Continue in manual-assisted mode and mark unrealtime data.
+2. Preserve successful records and any valid per-namespace cache; never substitute expired holdings status.
+3. Record the failure in `source_log` and mark the result `[部分结果不完整]`.
+4. Record visible page state or screenshot when available.
+5. Provide manual keywords and filters.
+6. Ask for search result screenshots, detail page screenshots, or copied OPAC text.
+7. Continue in manual-assisted mode and mark status from cache or missing status as `[馆藏状态未实时核验]`.
 
 ## Quality Control
 
@@ -84,5 +126,7 @@ Before finalizing, verify:
 - Exercises, exam guides, and low-relevance books have been removed or marked.
 - External books are no more than 8.
 - The report includes "明天去图书馆该怎么借".
-- Failed live OPAC verification is clearly marked.
-
+- Every status has a source and verification timestamp or an explicit missing timestamp.
+- Cached status is marked `[馆藏状态来自缓存]` and `[馆藏状态未实时核验]`.
+- Failed live OPAC verification and partial results are clearly marked.
+- Collector output is used as evidence, not mistaken for the Agent's final academic recommendation.
