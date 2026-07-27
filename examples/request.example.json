@@ -1,0 +1,20 @@
+{
+  "profile": {
+    "school": "成都大学",
+    "major": "计算机科学与技术",
+    "stage": "本科二年级",
+    "goal": "建立数据结构与算法基础",
+    "purpose": "课程学习",
+    "network": "未知",
+    "output_depth": "normal"
+  },
+  "keywords": ["数据结构", "算法设计"],
+  "max_results_per_keyword": 30,
+  "max_records": 20,
+  "max_location_requests": 12,
+  "include_shelf_locations": true,
+  "use_cache": true,
+  "refresh": false,
+  "request_delay_seconds": 0.8,
+  "max_retries": 2
+}

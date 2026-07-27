@@ -1,0 +1,141 @@
+{
+  "schema_version": "1.0",
+  "profile": {
+    "school": "成都大学",
+    "major": "计算机科学与技术",
+    "stage": "本科二年级",
+    "goal": "建立数据结构与算法基础",
+    "purpose": "课程学习",
+    "network": "未知",
+    "output_depth": "normal"
+  },
+  "keyword_totals": {
+    "数据结构": 1
+  },
+  "records": [
+    {
+      "marcRecNo": "EXAMPLE001",
+      "title": "脱敏示例书目",
+      "author": "示例作者",
+      "publisher": "示例出版社",
+      "pubYear": "2024",
+      "callNo": "TP000/1",
+      "matched_keywords": ["数据结构"],
+      "search_provenance": [
+        {
+          "source": "cache",
+          "cached": true,
+          "verified_at": "2026-07-26T09:00:00+08:00",
+          "label": "[检索结果来自缓存]"
+        }
+      ],
+      "detail_url": "http://libopac.cdu.edu.cn/opac/item.php?marc_no=EXAMPLE001",
+      "fields": {
+        "题名": "脱敏示例书目",
+        "学科主题": "数据结构"
+      },
+      "repeated_fields": {},
+      "metadata_provenance": {
+        "source": "cache",
+        "cached": true,
+        "verified_at": "2026-07-26T09:00:00+08:00",
+        "label": "[书目来自缓存]"
+      },
+      "holdings_provenance": {
+        "source": "cache",
+        "cached": true,
+        "verified_at": "2026-07-26T09:00:00+08:00",
+        "label": "[馆藏状态来自缓存] [馆藏状态未实时核验]"
+      },
+      "holdings": [
+        {
+          "call_no": "TP000/1",
+          "barcode": "EXAMPLE-BARCODE",
+          "volume": "",
+          "location": "示例馆藏地",
+          "status": "可借",
+          "status_source": "cache",
+          "status_cached": true,
+          "status_verified_at": "2026-07-26T09:00:00+08:00",
+          "status_label": "[馆藏状态来自缓存] [馆藏状态未实时核验]",
+          "navigation": {
+            "barcode": "EXAMPLE-BARCODE",
+            "navigation_url": "http://120.94.216.7:8080/navigationservice/bookcode/EXAMPLE-BARCODE",
+            "navigation_location": "示例楼层与架位",
+            "shelf_code": "EXAMPLE-1",
+            "navigation_title": "脱敏示例书目"
+          },
+          "navigation_provenance": {
+            "source": "cache",
+            "cached": true,
+            "verified_at": "2026-07-20T09:00:00+08:00",
+            "label": "[架位信息来自缓存]"
+          }
+        }
+      ]
+    }
+  ],
+  "source_log": {
+    "collected_at": "2026-07-27T10:00:00+08:00",
+    "opac_base": "http://libopac.cdu.edu.cn/opac/",
+    "navigation_base": "http://120.94.216.7:8080/navigationservice/bookcode/",
+    "keywords": ["数据结构"],
+    "cache_enabled": true,
+    "cache_write_errors": [],
+    "cache_ttl_days": {
+      "search": 30,
+      "metadata": 30,
+      "holdings": 3,
+      "location": 30
+    },
+    "cache_hits": {
+      "search": 1,
+      "metadata": 1,
+      "holdings": 1,
+      "location": 1
+    },
+    "provenance_counts": {
+      "search": {
+        "live": 0,
+        "cache": 1,
+        "unverified": 0
+      },
+      "metadata": {
+        "live": 0,
+        "cache": 1,
+        "unverified": 0
+      },
+      "holdings": {
+        "live": 0,
+        "cache": 1,
+        "unverified": 0
+      },
+      "location": {
+        "live": 0,
+        "cache": 1,
+        "unverified": 0
+      }
+    },
+    "request_policy": {
+      "delay_seconds": 0.8,
+      "max_retries": 2,
+      "retry_backoff_seconds": 1.0,
+      "timeout_seconds": 25.0,
+      "max_records": 20,
+      "max_location_requests": 12
+    },
+    "request_events": [],
+    "failures": [],
+    "records_discovered": 1,
+    "records_processed": 1,
+    "records_truncated": false,
+    "location_live_requests": 0
+  },
+  "labels": [
+    "[检索结果来自缓存]",
+    "[书目来自缓存]",
+    "[馆藏状态来自缓存]",
+    "[馆藏状态未实时核验]",
+    "[架位信息来自缓存]"
+  ]
+}

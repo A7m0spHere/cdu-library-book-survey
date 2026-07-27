@@ -1,0 +1,679 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/A7m0spHere/cdu-library-book-survey/schemas/survey.schema.json",
+  "title": "CDU OPAC survey collection result",
+  "description": "Machine-collected OPAC evidence. Recommendation rankings, learning routes, and academic judgments are intentionally outside this schema.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "profile",
+    "keyword_totals",
+    "records",
+    "source_log",
+    "labels"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "profile": {
+      "$ref": "#/$defs/profile"
+    },
+    "keyword_totals": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/record"
+      }
+    },
+    "source_log": {
+      "$ref": "#/$defs/sourceLog"
+    },
+    "labels": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "[检索结果来自缓存]",
+          "[书目来自缓存]",
+          "[馆藏状态来自缓存]",
+          "[架位信息来自缓存]",
+          "[馆藏状态已实时核验]",
+          "[馆藏状态未实时核验]",
+          "[部分结果不完整]"
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "school": {
+          "type": "string",
+          "minLength": 1
+        },
+        "major": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "goal": {
+          "type": "string",
+          "minLength": 1
+        },
+        "purpose": {
+          "type": "string",
+          "enum": ["课程学习", "考研", "科研入门", "兴趣拓展", "职业技能"]
+        },
+        "network": {
+          "type": "string",
+          "enum": ["校园网", "学校 VPN", "校外未连接 VPN", "未知"]
+        },
+        "output_depth": {
+          "type": "string",
+          "enum": ["brief", "normal", "deep"]
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["source", "cached", "verified_at", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": ["live", "cache", "unverified"]
+        },
+        "cached": {
+          "type": "boolean"
+        },
+        "verified_at": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "const": "cache"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "cached": {
+                "const": true
+              },
+              "verified_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "cached": {
+                "const": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "const": "live"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "verified_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "else": {
+            "if": {
+              "properties": {
+                "source": {
+                  "const": "unverified"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "verified_at": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "holding": {
+      "type": "object",
+      "required": [
+        "call_no",
+        "barcode",
+        "volume",
+        "location",
+        "status",
+        "status_source",
+        "status_cached",
+        "status_verified_at",
+        "status_label"
+      ],
+      "properties": {
+        "call_no": {
+          "type": "string"
+        },
+        "barcode": {
+          "type": "string"
+        },
+        "volume": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "status_source": {
+          "type": "string",
+          "enum": ["live", "cache", "unverified"]
+        },
+        "status_cached": {
+          "type": "boolean"
+        },
+        "status_verified_at": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status_label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "navigation": {
+          "$ref": "#/$defs/navigation"
+        },
+        "navigation_provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "navigation_error": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status_source": {
+                "const": "cache"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "status_cached": {
+                "const": true
+              },
+              "status_verified_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "status_cached": {
+                "const": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status_source": {
+                "const": "live"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "status_verified_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "else": {
+            "if": {
+              "properties": {
+                "status_source": {
+                  "const": "unverified"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "status_verified_at": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "navigation": {
+      "type": "object",
+      "required": [
+        "barcode",
+        "navigation_url",
+        "navigation_location",
+        "shelf_code",
+        "navigation_title"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "barcode": {
+          "type": "string"
+        },
+        "navigation_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "navigation_location": {
+          "type": "string"
+        },
+        "shelf_code": {
+          "type": "string"
+        },
+        "navigation_title": {
+          "type": "string"
+        }
+      }
+    },
+    "record": {
+      "type": "object",
+      "required": [
+        "marcRecNo",
+        "matched_keywords",
+        "search_provenance",
+        "detail_url",
+        "fields",
+        "repeated_fields",
+        "metadata_provenance",
+        "holdings_provenance",
+        "holdings"
+      ],
+      "properties": {
+        "marcRecNo": {
+          "type": "string",
+          "minLength": 1
+        },
+        "matched_keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "search_provenance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/provenance"
+          }
+        },
+        "detail_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "fields": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "repeated_fields": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "metadata_provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "holdings_provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "holdings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/holding"
+          }
+        },
+        "detail_error": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "sourceCount": {
+      "type": "object",
+      "required": ["live", "cache", "unverified"],
+      "additionalProperties": false,
+      "properties": {
+        "live": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cache": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unverified": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "cacheCount": {
+      "type": "object",
+      "required": ["search", "metadata", "holdings", "location"],
+      "additionalProperties": false,
+      "properties": {
+        "search": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "metadata": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "holdings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "location": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "cacheWriteError": {
+      "type": "object",
+      "required": ["namespace", "key", "error"],
+      "additionalProperties": false,
+      "properties": {
+        "namespace": {
+          "type": "string",
+          "enum": ["search", "metadata", "holdings", "location"]
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "requestPolicy": {
+      "type": "object",
+      "required": [
+        "delay_seconds",
+        "max_retries",
+        "retry_backoff_seconds",
+        "timeout_seconds",
+        "max_records",
+        "max_location_requests"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "delay_seconds": {
+          "type": "number",
+          "minimum": 0.2
+        },
+        "max_retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "retry_backoff_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "timeout_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "max_records": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500
+        },
+        "max_location_requests": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 500
+        }
+      }
+    },
+    "requestEvent": {
+      "type": "object",
+      "required": ["event", "url", "attempt", "error"],
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "type": "string",
+          "enum": ["request_retry", "request_failed"]
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "error": {
+          "type": "string"
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "wait_seconds": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "failure": {
+      "type": "object",
+      "required": ["step", "error"],
+      "additionalProperties": false,
+      "properties": {
+        "step": {
+          "type": "string",
+          "enum": ["search", "detail", "location"]
+        },
+        "error": {
+          "type": "string"
+        },
+        "keyword": {
+          "type": "string"
+        },
+        "marc_no": {
+          "type": "string"
+        },
+        "barcode": {
+          "type": "string"
+        }
+      }
+    },
+    "sourceLog": {
+      "type": "object",
+      "required": [
+        "collected_at",
+        "opac_base",
+        "navigation_base",
+        "keywords",
+        "cache_enabled",
+        "cache_write_errors",
+        "cache_ttl_days",
+        "cache_hits",
+        "provenance_counts",
+        "request_policy",
+        "request_events",
+        "failures",
+        "records_discovered",
+        "records_processed",
+        "records_truncated",
+        "location_live_requests"
+      ],
+      "properties": {
+        "collected_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "opac_base": {
+          "type": "string",
+          "format": "uri"
+        },
+        "navigation_base": {
+          "type": "string",
+          "format": "uri"
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cache_enabled": {
+          "type": "boolean"
+        },
+        "cache_write_errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cacheWriteError"
+          }
+        },
+        "cache_ttl_days": {
+          "type": "object",
+          "required": ["search", "metadata", "holdings", "location"],
+          "additionalProperties": false,
+          "properties": {
+            "search": {
+              "const": 30
+            },
+            "metadata": {
+              "const": 30
+            },
+            "holdings": {
+              "const": 3
+            },
+            "location": {
+              "const": 30
+            }
+          }
+        },
+        "cache_hits": {
+          "$ref": "#/$defs/cacheCount"
+        },
+        "provenance_counts": {
+          "type": "object",
+          "required": ["search", "metadata", "holdings", "location"],
+          "additionalProperties": false,
+          "properties": {
+            "search": {
+              "$ref": "#/$defs/sourceCount"
+            },
+            "metadata": {
+              "$ref": "#/$defs/sourceCount"
+            },
+            "holdings": {
+              "$ref": "#/$defs/sourceCount"
+            },
+            "location": {
+              "$ref": "#/$defs/sourceCount"
+            }
+          }
+        },
+        "request_policy": {
+          "$ref": "#/$defs/requestPolicy"
+        },
+        "request_events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/requestEvent"
+          }
+        },
+        "failures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/failure"
+          }
+        },
+        "records_discovered": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "records_processed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "records_truncated": {
+          "type": "boolean"
+        },
+        "location_live_requests": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

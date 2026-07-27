@@ -91,14 +91,19 @@ cd cdu-library-book-survey
     "major": "你的专业",
     "stage": "年级或学习阶段",
     "goal": "学习或研究目标",
-    "purpose": "课程学习 / 考研 / 科研入门 / 兴趣拓展 / 职业技能",
-    "network": "校园网 / 学校 VPN / 校外未连接 VPN / 未知",
+    "purpose": "课程学习",
+    "network": "未知",
     "output_depth": "normal"
   },
   "keywords": ["关键词1", "关键词2", "关键词3"],
-  "max_results_per_keyword": 50,
+  "max_results_per_keyword": 30,
+  "max_records": 50,
+  "max_location_requests": 30,
   "include_shelf_locations": true,
-  "use_cache": true
+  "use_cache": true,
+  "refresh": false,
+  "request_delay_seconds": 0.8,
+  "max_retries": 2
 }
 ```
 
@@ -108,6 +113,19 @@ cd cdu-library-book-survey
 python scripts/opac_survey.py --input request.json --output survey.json --format json
 ```
 
+命令行参数可以覆盖请求文件中的安全上限：
+
+```bash
+python scripts/opac_survey.py \
+  --input request.json \
+  --output survey.json \
+  --format json \
+  --delay 1.0 \
+  --max-retries 2 \
+  --max-records 50 \
+  --max-location-requests 30
+```
+
 也可以输出 CSV 或 Markdown：
 
 ```bash
@@ -115,7 +133,11 @@ python scripts/opac_survey.py --input request.json --output survey.csv --format 
 python scripts/opac_survey.py --input request.json --output survey.md --format md
 ```
 
-> 脚本负责收集证据；推荐排序、学习路线、能力映射和最终报告由 Agent 按 `references/` 中的规则完成。
+请求和采集结果的稳定契约见
+[`request.schema.json`](./schemas/request.schema.json)、
+[`survey.schema.json`](./schemas/survey.schema.json) 及
+[`examples/`](./examples/)。脚本负责收集 OPAC 证据；推荐排序、学习路线、
+能力映射和最终学术判断由 Agent 按 `references/` 中的规则完成。
 
 ## 它如何工作
 
@@ -177,12 +199,21 @@ python scripts/opac_survey.py --input request.json --output survey.md --format m
 | 标签 | 使用场景 |
 |---|---|
 | `[未核验]` | OPAC 信息尚未核验 |
-| `[缓存数据]` | 使用了缓存记录 |
+| `[检索结果来自缓存]` | 本次关键词检索复用了搜索缓存 |
+| `[书目来自缓存]` | 题名、作者、出版信息等复用了书目缓存 |
+| `[馆藏状态来自缓存]` | 馆藏条码与借阅状态复用了 3 天内的独立缓存 |
+| `[架位信息来自缓存]` | 楼层、架位等导航信息复用了缓存 |
+| `[馆藏状态已实时核验]` | 本次运行成功请求并解析了该书详情页的馆藏状态 |
+| `[馆藏状态未实时核验]` | 状态来自缓存，或本次未能从详情页取得状态 |
+| `[部分结果不完整]` | 至少一个请求失败，或结果因记录上限被截断 |
 | `[外部资料]` | 来自出版机构或其他外部来源 |
 | `[人工判断]` | 来自路线、课程或学习价值判断 |
-| `[未实时核验]` | 无法确认当前借阅状态 |
 
-推荐置信度从 A 到 D：A 表示详情、馆藏状态与位置均已核验；无法实时访问 OPAC 时不会使用 A。
+“馆藏状态已实时核验”只表示状态在**本次采集运行**中从 OPAC 详情响应成功解析，
+不表示后续始终有效。只要状态来自缓存，即使缓存尚未超过 3 天、请求也没有报错，
+仍必须显示原始 `status_verified_at`，并同时标记
+`[馆藏状态来自缓存]` 和 `[馆藏状态未实时核验]`。推荐置信度从 A 到 D；
+含缓存状态或未核验状态的记录不能使用 A。
 
 ### 网络前置条件
 
@@ -208,29 +239,74 @@ OPAC 地址：<http://libopac.cdu.edu.cn/opac/search_adv.php#/index>
 
 | 数据类型 | 有效期 |
 |---|---:|
-| 书目元数据 | 30 天 |
-| 图书定位信息 | 30 天 |
 | 关键词检索结果 | 30 天 |
+| 书目元数据 | 30 天 |
 | 馆藏/可借状态 | 3 天 |
+| 图书定位信息 | 30 天 |
 
-使用缓存且无法实时复核时，输出必须同时标记 `[缓存数据]` 和 `[未实时核验]`。
+四类数据分别存储。旧版书目缓存中若包含馆藏状态，仅在缓存年龄不超过 3 天时
+保留其原始时间并迁移到独立状态缓存；独立缓存写入并回读成功后，才清理书目中的
+嵌入状态。更旧的状态会被忽略，不会被当作实时状态。
+缓存采用同目录临时文件、同步写入和原子替换，损坏的 JSON 会安全降级为缓存未命中。
 
 </details>
+
+### 温和请求与失败降级
+
+- 默认任意两个 OPAC 请求至少间隔 `0.8` 秒。
+- 仅对 `429`、`502`、`503`、`504` 和临时网络错误最多重试 `2` 次，
+  默认按 `1` 秒、`2` 秒退避，并尊重更长的 `Retry-After`。
+- 默认每次最多处理 `50` 条详情记录、发起 `30` 次实时架位请求；
+  每个关键词最多取 `100` 条搜索结果。
+- 单条记录失败不会丢弃其他结果；失败、重试、截断、缓存写入错误和请求策略均写入
+  `source_log`。请求失败或记录截断时，整体标记 `[部分结果不完整]`。
+- OPAC 不可访问时，可以使用仍在各自 TTL 内的缓存；过期的馆藏状态不会输出为
+  当前状态。若证据不足，应转为截图、复制文本或导出结果的人工辅助模式。
+
+这些策略不会登录账号，也不会绕过验证码、VPN 或站点访问限制。
+
+### 本地验证
+
+运行时脚本仅使用 Python 标准库。Schema 验证依赖只用于开发与 CI：
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m py_compile scripts/opac_survey.py scripts/validate_examples.py
+python -m unittest discover -s tests -v
+python scripts/opac_survey.py --help
+python scripts/validate_examples.py
+git diff --check
+```
+
+所有自动化解析、缓存和网络失败测试都使用脱敏 fixture 或 mock，不访问真实 OPAC。
 
 ## 项目结构
 
 ```text
 cdu-library-book-survey/
+├── .github/workflows/ci.yml
 ├── README.md
 ├── AGENTS.md
 ├── SKILL.md
 ├── CLAUDE.md
 ├── prompt.md
+├── requirements-dev.txt
 ├── assets/readme/
 │   ├── hero.svg
 │   └── workflow.svg
+├── examples/
+│   ├── request.example.json
+│   └── survey.example.json
+├── schemas/
+│   ├── request.schema.json
+│   └── survey.schema.json
 ├── scripts/
-│   └── opac_survey.py
+│   ├── opac_survey.py
+│   └── validate_examples.py
+├── tests/
+│   ├── fixtures/
+│   ├── test_opac_survey.py
+│   └── test_schemas.py
 ├── cache/
 └── references/
     ├── workflow.md

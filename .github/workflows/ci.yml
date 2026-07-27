@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.9"
+          - "3.12"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install test dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Check Python syntax
+        run: python -m py_compile scripts/opac_survey.py scripts/validate_examples.py
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Check CLI help
+        run: python scripts/opac_survey.py --help
+
+      - name: Validate examples against schemas
+        run: python scripts/validate_examples.py
+
+      - name: Check whitespace errors
+        shell: bash
+        run: |
+          git diff --check
+          if git grep -nI -E '[[:blank:]]+$'; then
+            echo "Tracked text files contain trailing whitespace."
+            exit 1
+          fi
