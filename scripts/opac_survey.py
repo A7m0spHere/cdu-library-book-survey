@@ -12,6 +12,11 @@ Input JSON:
   "use_cache": true,
   "refresh": false
 }
+
+Transport security (issue #2): all remote pages are treated as untrusted
+external input. The script enforces a URL allowlist (host + scheme + port),
+prefers HTTPS with explicit logged HTTP fallback, validates every redirect
+hop, and reads response bodies with a hard byte limit.
 """
 
 from __future__ import annotations
@@ -36,6 +41,202 @@ from typing import Any
 BASE = "http://libopac.cdu.edu.cn/opac/"
 NAV_BASE = "http://120.94.216.7:8080/navigationservice/bookcode/"
 USER_AGENT = "Mozilla/5.0 (compatible; cdu-library-book-survey/1.0)"
+
+# ---------------------------------------------------------------------------
+# Transport security policy (issue #2).
+#
+# Remote OPAC pages are untrusted external input; the transport layer enforces:
+#   1. a host allowlist with explicit schemes and ports (no other host --
+#      including localhost or intranet addresses -- can ever be contacted);
+#   2. HTTPS-first for the OPAC domain, with HTTP allowed only as an explicit,
+#      logged downgrade because TLS support cannot be confirmed off-campus;
+#   3. per-hop redirect validation: allowlisted hosts only, never an
+#      HTTPS -> HTTP downgrade, and a bounded redirect count;
+#   4. bounded response reads (no unbounded resp.read()).
+# The navigation service is a raw CERNET IP without TLS; it serves public
+# barcode navigation only. The script never sends accounts, cookies, or any
+# personal data to either endpoint.
+# ---------------------------------------------------------------------------
+
+REQUEST_TIMEOUT = 25  # seconds per socket operation
+MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+MAX_REDIRECTS = 5
+READ_CHUNK_SIZE = 64 * 1024
+
+ALLOWED_HOSTS: dict[str, dict[str, Any]] = {
+    "libopac.cdu.edu.cn": {"schemes": ("https", "http"), "ports": (80, 443), "https_first": True},
+    "120.94.216.7": {"schemes": ("http",), "ports": (8080,), "https_first": False},
+}
+
+
+class TransportError(RuntimeError):
+    """Base class for transport-policy violations."""
+
+
+class HostNotAllowedError(TransportError):
+    """Target host or port is not on the allowlist."""
+
+
+class SchemeNotAllowedError(TransportError):
+    """URL scheme is not allowed for the target host."""
+
+
+class RedirectBlockedError(TransportError):
+    """A redirect hop was rejected by policy."""
+
+
+class ResponseTooLargeError(TransportError):
+    """Response body exceeded the configured byte limit."""
+
+
+class TransportUnavailableError(TransportError):
+    """Network, TLS, or HTTP failure; callers should degrade gracefully."""
+
+
+def validate_url(url: str, policy: dict[str, dict[str, Any]] | None = None) -> tuple[str, str, int]:
+    """Return (scheme, host, port) for url, or raise a TransportError."""
+    parts = urllib.parse.urlsplit(url)
+    scheme = parts.scheme.lower()
+    host = (parts.hostname or "").lower()
+    if parts.username or parts.password:
+        raise HostNotAllowedError(f"Userinfo in URL is not allowed: {url!r}")
+    rule = (policy if policy is not None else ALLOWED_HOSTS).get(host)
+    if rule is None:
+        raise HostNotAllowedError(f"Host not on the allowlist: {host!r} (url: {url!r})")
+    if scheme not in rule["schemes"]:
+        raise SchemeNotAllowedError(f"Scheme {scheme!r} is not allowed for host {host!r}")
+    port = parts.port or (443 if scheme == "https" else 80)
+    if port not in rule["ports"]:
+        raise HostNotAllowedError(f"Port {port} is not allowed for host {host!r}")
+    return scheme, host, port
+
+
+class _PolicyRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Redirect handler that validates every hop against the transport policy."""
+
+    def __init__(self, max_redirects: int, policy: dict[str, dict[str, Any]] | None = None) -> None:
+        super().__init__()
+        self.max_redirects = max_redirects
+        self.policy = policy if policy is not None else ALLOWED_HOSTS
+        self.hops = 0
+
+    def redirect_request(
+        self, req: urllib.request.Request, fp: Any, code: int, msg: str, headers: Any, newurl: str
+    ) -> urllib.request.Request | None:
+        self.hops += 1
+        try:
+            if self.hops > self.max_redirects:
+                raise RedirectBlockedError(
+                    f"More than {self.max_redirects} redirects for {req.full_url!r}"
+                )
+            try:
+                scheme, _host, _port = validate_url(newurl, self.policy)
+                current_scheme = urllib.parse.urlsplit(req.full_url).scheme.lower()
+                if current_scheme == "https" and scheme != "https":
+                    raise RedirectBlockedError(f"HTTPS -> {scheme} downgrade blocked: {newurl!r}")
+            except RedirectBlockedError:
+                raise
+            except TransportError as exc:
+                raise RedirectBlockedError(f"Redirect to {newurl!r} rejected: {exc}") from exc
+        finally:
+            fp.close()
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+class Transport:
+    """HTTPS-first HTTP client enforcing the URL allowlist and bounded reads."""
+
+    def __init__(
+        self,
+        policy: dict[str, dict[str, Any]] | None = None,
+        timeout: float = REQUEST_TIMEOUT,
+        max_bytes: int = MAX_RESPONSE_BYTES,
+        max_redirects: int = MAX_REDIRECTS,
+    ) -> None:
+        self.policy = policy if policy is not None else ALLOWED_HOSTS
+        self.timeout = timeout
+        self.max_bytes = max_bytes
+        self.max_redirects = max_redirects
+        self.pinned_scheme: dict[str, str] = {}
+        self.downgrades: list[dict[str, str]] = []
+
+    def _candidate_urls(self, url: str) -> list[tuple[str, str]]:
+        """Ordered (reason, url) attempts applying the HTTPS-first policy."""
+        scheme, host, _port = validate_url(url, self.policy)
+        rule = self.policy[host]
+        if scheme == "https" or not rule.get("https_first"):
+            return [("request", url)]
+        if self.pinned_scheme.get(host) == "http":
+            return [("request", url)]
+        parts = urllib.parse.urlsplit(url)
+        https_netloc = f"{host}:{parts.port}" if parts.port is not None else host
+        https_url = urllib.parse.urlunsplit(("https", https_netloc, parts.path, parts.query, parts.fragment))
+        return [("https_probe", https_url), ("http_fallback", url)]
+
+    def request(self, url: str, data: bytes | None = None, content_type: str | None = None) -> bytes:
+        attempts = self._candidate_urls(url)
+        last_error: TransportUnavailableError | None = None
+        for reason, attempt_url in attempts:
+            try:
+                return self._single_request(attempt_url, data, content_type)
+            except TransportUnavailableError as exc:
+                last_error = exc
+                if reason == "https_probe":
+                    self._record_downgrade(attempt_url, str(exc))
+                    continue
+                raise
+        raise last_error  # pragma: no cover - the loop always returns or raises
+
+    def _record_downgrade(self, https_url: str, reason: str) -> None:
+        host = urllib.parse.urlsplit(https_url).hostname or ""
+        self.pinned_scheme[host] = "http"
+        if not any(entry.get("host") == host for entry in self.downgrades):
+            self.downgrades.append({"host": host, "from": "https", "to": "http", "reason": reason[:200]})
+
+    def _single_request(self, url: str, data: bytes | None, content_type: str | None) -> bytes:
+        validate_url(url, self.policy)
+        headers = {
+            "User-Agent": USER_AGENT,
+            "Referer": urllib.parse.urljoin(BASE, "search_adv.php#/index"),
+        }
+        if content_type:
+            headers["Content-Type"] = content_type
+        req = urllib.request.Request(url, data=data, headers=headers)
+        opener = urllib.request.build_opener(_PolicyRedirectHandler(self.max_redirects, self.policy))
+        try:
+            with opener.open(req, timeout=self.timeout) as resp:
+                return self._bounded_read(resp)
+        except urllib.error.HTTPError as exc:
+            exc.close()
+            if 300 <= exc.code < 400:
+                # The redirect machinery refused to follow (loop guard or cap).
+                raise RedirectBlockedError(
+                    f"Redirect for {url!r} was rejected: HTTP {exc.code} {exc.reason}"
+                ) from exc
+            raise TransportUnavailableError(f"HTTP {exc.code} {exc.reason} for {url!r}") from exc
+        except OSError as exc:  # URLError, socket.timeout, ssl.SSLError, ...
+            raise TransportUnavailableError(f"{type(exc).__name__} for {url!r}: {exc}") from exc
+
+    def _bounded_read(self, resp: Any) -> bytes:
+        length = resp.headers.get("Content-Length")
+        if length and length.strip().isdigit() and int(length) > self.max_bytes:
+            raise ResponseTooLargeError(
+                f"Content-Length {length} exceeds the {self.max_bytes}-byte limit"
+            )
+        chunks: list[bytes] = []
+        total = 0
+        while True:
+            chunk = resp.read(READ_CHUNK_SIZE)
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > self.max_bytes:
+                raise ResponseTooLargeError(f"Response body exceeds {self.max_bytes} bytes")
+            chunks.append(chunk)
+        return b"".join(chunks)
+
+
+TRANSPORT = Transport()
 
 CACHE_TTL = {
     "search": 30 * 24 * 3600,
@@ -137,15 +338,8 @@ class DLParser(HTMLParser):
 
 
 def request(url: str, data: bytes | None = None, content_type: str | None = None) -> bytes:
-    headers = {
-        "User-Agent": USER_AGENT,
-        "Referer": urllib.parse.urljoin(BASE, "search_adv.php#/index"),
-    }
-    if content_type:
-        headers["Content-Type"] = content_type
-    req = urllib.request.Request(url, data=data, headers=headers)
-    with urllib.request.urlopen(req, timeout=25) as resp:
-        return resp.read()
+    """Fetch url through the hardened transport (allowlist, bounded reads)."""
+    return TRANSPORT.request(url, data, content_type)
 
 
 def post_json(path: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -318,6 +512,13 @@ def collect(config: dict[str, Any], cache: Cache) -> dict[str, Any]:
 
     records = list(records_by_marc.values())
     records.sort(key=lambda r: (str(r.get("pubYear", "")), len(r.get("matched_keywords", []))), reverse=True)
+    # Snapshot after collection so downgrade records made during fetching are included.
+    source_log["transport"] = {
+        "max_response_bytes": TRANSPORT.max_bytes,
+        "max_redirects": TRANSPORT.max_redirects,
+        "allowed_hosts": sorted(TRANSPORT.policy),
+        "downgrades": list(TRANSPORT.downgrades),
+    }
     return {
         "profile": config.get("profile", {}),
         "keyword_totals": keyword_totals,
@@ -331,6 +532,8 @@ def labels_for_result(source_log: dict[str, Any]) -> list[str]:
     labels: list[str] = []
     if sum(source_log.get("cache_hits", {}).values()) > 0:
         labels.append("[缓存数据]")
+    if source_log.get("transport", {}).get("downgrades"):
+        labels.append("[HTTP降级]")
     if source_log.get("failures"):
         labels.append("[未实时核验]")
     return labels
